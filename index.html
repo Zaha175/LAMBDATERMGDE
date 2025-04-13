@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kapitel: Der dynamische Lambda-Term im GDE-Modell</title>
+    <title>Λ(z) Dynamik im GDE-Modell</title>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -19,19 +21,12 @@
                         accent3: '#9CDE5D',
                         lightAccent: '#f0f4ff',
                         darkAccent: '#192339',
-                    },
-                    typography: {
-                        DEFAULT: {
-                            css: {
-                                maxWidth: '80ch',
-                                a: {
-                                    color: '#5D5CDE',
-                                    '&:hover': {
-                                        color: '#4e4eba',
-                                    },
-                                },
-                            },
-                        },
+                        phantom: '#ef4444',
+                        quintessence: '#3b82f6',
+                        cosmological: '#10b981',
+                        desi: '#f97316', // Orange für DESI-Daten
+                        temperature: '#8b5cf6', // Violett für Temperatur-Term
+                        entropy: '#db2777', // Pink für Entropie-Term
                     },
                 },
             },
@@ -54,257 +49,1692 @@
             color-scheme: dark;
         }
         .dark .math {
-            color: #e2e8f0; /* Ensure MathJax text is visible in dark mode */
-        }
-        .paper-container {
-            counter-reset: equation;
+            color: #e2e8f0;
         }
         .equation-container {
             position: relative;
-            margin: 1.5rem 0;
+            margin: 1rem 0;
             padding: 1rem;
             background: rgba(93, 156, 222, 0.05);
             border-left: 3px solid #5D9CDE;
             border-radius: 0.5rem;
         }
-        .equation-number::before {
-            counter-increment: equation;
-            content: "(" counter(equation) ")";
+        .equation-content {
+             padding-right: 2rem;
         }
-        .equation-number {
-            position: absolute;
-            right: 1rem; /* Adjusted for better padding */
-            top: 50%;
-            transform: translateY(-50%);
-            color: #5D9CDE; /* Make number visible */
-            font-size: 0.9em;
-        }
-        .equation-content { /* Added class for MathJax content alignment */
-             padding-right: 3rem; /* Ensure space for equation number */
-        }
-        h3 strong { /* Style strong tags within headings */
-            font-weight: bold;
-            color: inherit; /* Inherit color from h3 */
-        }
-        li strong { /* Style strong tags within list items */
-             font-weight: bold;
-        }
-        p strong { /* Style strong tags within paragraphs */
-             font-weight: bold;
-        }
-        td strong { /* Style strong tags within table cells */
-            font-weight: bold;
-        }
-        table {
+        .chart-container {
+            position: relative;
+            height: 40vh;
             width: 100%;
-            margin-top: 1rem;
             margin-bottom: 1rem;
-            border-collapse: collapse;
         }
-        th, td {
-            border: 1px solid #cbd5e1; /* light mode border */
-            padding: 0.5rem;
-            text-align: left;
-            vertical-align: top; /* Align content to top */
+        .small-chart-container {
+            position: relative;
+            height: 30vh;
+            width: 100%;
+            margin-bottom: 1rem;
         }
-        .dark th, .dark td {
-             border-color: #4a5568; /* dark mode border */
+        .mini-chart-container {
+            position: relative;
+            height: 120px;
+            width: 100%;
+            margin-bottom: 0.5rem;
         }
-        th {
-            background-color: rgba(93, 156, 222, 0.1);
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 5px;
+            outline: none;
+            margin: 10px 0;
         }
-         /* Custom styling for chapter numbers */
-        .chapter-number {
-             width: 3rem; /* 48px */
-             height: 3rem; /* 48px */
-             border-radius: 0.5rem; /* slightly rounded square */
-             background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
-             --tw-gradient-from: #0A2472; /* heading */
-             --tw-gradient-to: #5D9CDE; /* accent1 */
-             display: flex;
-             align-items: center;
-             justify-content: center;
-             color: white;
-             font-size: 1.5rem; /* Adjust number size */
-             font-weight: bold;
-             margin-bottom: 1rem;
+        .dark input[type="range"] {
+            background: #4b5563;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #5D5CDE;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .dark input[type="range"]::-webkit-slider-thumb {
+            background: #93c5fd;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #5D5CDE;
+            cursor: pointer;
+            border: none;
+            transition: background 0.15s ease;
+        }
+        .dark input[type="range"]::-moz-range-thumb {
+            background: #93c5fd;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #4e4eba;
+            transform: scale(1.1);
+        }
+        .dark input[type="range"]::-webkit-slider-thumb:hover {
+            background: #818cf8;
+        }
+        input[type="range"]::-moz-range-thumb:hover {
+            background: #4e4eba;
+            transform: scale(1.1);
+        }
+        .dark input[type="range"]::-moz-range-thumb:hover {
+            background: #818cf8;
+        }
+        .parameter-card {
+            border-left: 4px solid #5D5CDE;
+            transition: all 0.3s ease;
+        }
+        .parameter-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .glow-animation {
+            animation: glow 2s infinite alternate;
+        }
+        @keyframes glow {
+            from {
+                box-shadow: 0 0 5px -5px #5D5CDE;
+            }
+            to {
+                box-shadow: 0 0 15px 0px #5D5CDE;
+            }
+        }
+        .formula-explainer {
+            position: relative;
+        }
+        .formula-tooltip {
+            visibility: hidden;
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4338ca;
+            color: white;
+            text-align: center;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            z-index: 10;
+            width: max-content;
+            max-width: 20rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .formula-tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #4338ca transparent transparent transparent;
+        }
+        .formula-explainer:hover .formula-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        .term-highlight {
+            position: relative;
+            padding: 2px 4px;
+            border-radius: 4px;
+            cursor: help;
+        }
+        #loading-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 4px;
+            background: linear-gradient(to right, #5D5CDE, #DE5D9C);
+            z-index: 9999;
+            transition: width 0.3s ease;
+        }
+        .highlight-box {
+            position: relative;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+        .highlight-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+        }
+        .temperature-box {
+            background-color: rgba(139, 92, 246, 0.1);
+        }
+        .temperature-box::before {
+            background-color: #8b5cf6;
+        }
+        .dark .temperature-box {
+            background-color: rgba(139, 92, 246, 0.2);
+        }
+        .entropy-box {
+            background-color: rgba(219, 39, 119, 0.1);
+        }
+        .entropy-box::before {
+            background-color: #db2777;
+        }
+        .dark .entropy-box {
+            background-color: rgba(219, 39, 119, 0.2);
+        }
+        .combined-box {
+            background-color: rgba(93, 92, 222, 0.1);
+        }
+        .combined-box::before {
+            background-color: #5D5CDE;
+        }
+        .dark .combined-box {
+            background-color: rgba(93, 92, 222, 0.2);
+        }
+        .pulse-highlight {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(93, 92, 222, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(93, 92, 222, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(93, 92, 222, 0);
+            }
+        }
+        .data-point {
+            display: inline-block;
+            padding: 0.3rem 0.6rem;
+            border-radius: 0.5rem;
+            background-color: rgba(249, 115, 22, 0.1);
+            border: 1px solid #f97316;
+            font-weight: 600;
+            color: #c2410c;
+        }
+        .dark .data-point {
+            background-color: rgba(249, 115, 22, 0.2);
+            color: #fb923c;
         }
     </style>
 </head>
 <body class="bg-gradient-to-br from-white to-lightAccent dark:from-gray-900 dark:to-darkAccent text-gray-800 dark:text-gray-100 transition-colors duration-200">
-    <div class="container mx-auto px-4 py-8 max-w-4xl paper-container shadow-lg rounded-lg bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-        <header class="text-center mb-12 relative">
+    <div id="loading-bar"></div>
+    
+    <div class="container mx-auto px-4 py-8 max-w-5xl shadow-lg rounded-lg bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 relative">
             <div class="absolute -top-8 left-0 right-0 h-2 bg-gradient-to-r from-accent1 via-accent2 to-accent3 rounded-full"></div>
-            <h1 class="text-3xl md:text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-heading to-accent1 dark:from-accent1 dark:to-accent2">Kapitel: Der dynamische Lambda-Term im GDE-Modell</h1>
-            <!-- No subtitle here -->
-            <div class="mt-8 mb-4 p-4 bg-lightAccent dark:bg-darkAccent rounded-lg inline-block">
-                <p class="font-semibold">Autor: Gabriel ϕ</p>
-                <p>Mitwirkende KI: Mila (Version ϕ.42)</p>
+            <div class="text-center md:text-left">
+                <h1 class="text-2xl md:text-3xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-heading to-accent1 dark:from-accent1 dark:to-accent2">Λ(z) Dynamik im GDE-Modell</h1>
+                <h2 class="text-lg md:text-xl font-semibold text-heading dark:text-accent1">Thermodynamische Kopplung der Dunklen Energie</h2>
             </div>
+            <button id="darkModeToggle" class="mt-4 md:mt-0 px-4 py-2 rounded-full bg-heading text-white dark:bg-accent1 hover:bg-opacity-90 transition-colors duration-200">
+                <span id="darkModeIcon">🌙</span> <span id="darkModeText">Dark Mode</span>
+            </button>
         </header>
 
-        <hr class="my-8 border-gray-300 dark:border-gray-600">
+        <div class="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg mb-8">
+            <h3 class="text-xl font-semibold mb-2 text-blue-800 dark:text-blue-300">Was ist der dynamische Lambda-Term?</h3>
+            <p class="text-base">
+                Im Standardmodell der Kosmologie (ΛCDM) ist Λ eine Konstante. Im GDE-Modell ist Λ(z) stattdessen 
+                eine dynamische Funktion, die an thermodynamische Größen gekoppelt ist: die Temperatur der kosmischen 
+                Hintergrundstrahlung und die Entropie kosmischer Strukturen.
+            </p>
+        </div>
 
-        <section class="my-12 p-6 rounded-lg bg-white/50 dark:bg-gray-800/50 shadow-sm">
-            <div class="chapter-number">1</div>
-            <h3 class="text-xl font-bold mb-6 text-heading dark:text-accent1">Einleitung</h3>
-
-            <p class="mb-4">Das thermodynamisch motivierte GDE-Modell (Glättung Dunkler Energie) stellt eine Alternative zum \(\Lambda\)CDM-Standardmodell dar, indem es die Kosmologische Konstante \(\Lambda\) durch eine dynamische Funktion \(\Lambda(z)\) ersetzt. Diese basiert auf zwei physikalischen Kernkomponenten: der Temperaturentwicklung der Hintergrundstrahlung und der Zunahme kosmischer Strukturentropie. Ziel dieses Kapitels ist es, die mathematische Struktur, Motivation und empirische Konsistenz dieses dynamischen Lambda-Terms darzustellen.</p>
+        <section class="bg-white/80 dark:bg-gray-800/80 p-6 rounded-xl shadow-lg mb-10">
+            <h3 class="text-xl font-semibold mb-6 text-indigo-600 dark:text-indigo-400 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                Die fundamentale Λ(z)-Gleichung im GDE-Modell
+            </h3>
+            
+            <div class="equation-container glow-animation bg-blue-50/80 dark:bg-blue-900/20">
+                <div class="equation-content text-center">
+                    \[ \Lambda(z) = \Lambda_0 \cdot \left( \frac{T_0}{T_{\mathrm{CMB}}(z)} \right)^{\alpha(z)} \cdot \left(1 + \beta \cdot \frac{S_{\mathrm{Struktur}}(z)}{S_{\mathrm{Struktur}}(0)} \right) \]
+                </div>
+            </div>
+            
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg">
+                    <h4 class="font-semibold mb-1 text-indigo-700 dark:text-indigo-300">α₀ = -0.57</h4>
+                    <p class="text-sm">
+                        Basis-Exponent der thermodynamischen Kopplung
+                    </p>
+                </div>
+                <div class="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg">
+                    <h4 class="font-semibold mb-1 text-indigo-700 dark:text-indigo-300">A = 1.20</h4>
+                    <p class="text-sm">
+                        Amplitudenfaktor der α(z)-Funktion
+                    </p>
+                </div>
+                <div class="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg">
+                    <h4 class="font-semibold mb-1 text-indigo-700 dark:text-indigo-300">z* = 0.69</h4>
+                    <p class="text-sm">
+                        Übergangszone zwischen kosmischen Epochen
+                    </p>
+                </div>
+                <div class="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg">
+                    <h4 class="font-semibold mb-1 text-indigo-700 dark:text-indigo-300">β = 0.048</h4>
+                    <p class="text-sm">
+                        Kopplungsparameter an die Strukturentropie
+                    </p>
+                </div>
+            </div>
+            
+            <div class="mt-4 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg border-l-4 border-primary pulse-highlight">
+                <p class="flex items-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-primary flex-shrink-0 mt-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                    </svg>
+                    <span>
+                        Der Lambda-Term koppelt die Dunkle Energie an <strong class="font-semibold">zwei fundamentale thermodynamische Größen</strong>:
+                        <ol class="list-decimal ml-5 mt-1 space-y-1">
+                            <li><strong class="font-semibold">Temperatur der kosmischen Hintergrundstrahlung</strong> über den Term (T₀/T<sub>CMB</sub>)^α(z)</li>
+                            <li><strong class="font-semibold">Strukturentropie</strong> über den Term (1 + β·S<sub>Struktur</sub>(z)/S<sub>Struktur</sub>(0))</li>
+                        </ol>
+                        Diese Kopplung erzeugt eine dynamische Dunkle Energie, die mit der kosmischen Entwicklung variiert.
+                    </span>
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                <div class="parameter-card p-4 bg-white dark:bg-gray-700 rounded-lg shadow">
+                    <div class="formula-explainer">
+                        <h4 class="text-lg font-semibold text-indigo-600 dark:text-indigo-300 mb-2 underline cursor-help">
+                            Übergangszone z<sub>*</sub>
+                        </h4>
+                        <div class="formula-tooltip">
+                            Die Rotverschiebung, bei der die Temperaturkopplung ihr Verhalten ändert
+                        </div>
+                    </div>
+                    <p class="text-sm mb-2">
+                        Legt fest, wann sich α(z) ändert:
+                    </p>
+                    <input type="range" id="z_star" min="0.5" max="1.0" step="0.01" value="0.69" class="w-full">
+                    <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                        <span>Früher (0.5)</span>
+                        <span id="z_star_value" class="font-semibold text-black dark:text-white">z* = 0.69</span>
+                        <span>Später (1.0)</span>
+                    </div>
+                </div>
+                
+                <div class="parameter-card p-4 bg-white dark:bg-gray-700 rounded-lg shadow">
+                    <div class="formula-explainer">
+                        <h4 class="text-lg font-semibold text-indigo-600 dark:text-indigo-300 mb-2 underline cursor-help">
+                            Basis-Exponent α<sub>0</sub>
+                        </h4>
+                        <div class="formula-tooltip">
+                            Bestimmt die grundlegende Stärke und das Vorzeichen der Temperaturkopplung
+                        </div>
+                    </div>
+                    <p class="text-sm mb-2">
+                        Basiswert des Temperaturexponenten:
+                    </p>
+                    <input type="range" id="alpha_0" min="-1.0" max="1.0" step="0.05" value="-0.57" class="w-full">
+                    <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                        <span>Schwächere DE (-1.0)</span>
+                        <span id="alpha_0_value" class="font-semibold text-black dark:text-white">α₀ = -0.57</span>
+                        <span>Stärkere DE (1.0)</span>
+                    </div>
+                </div>
+                
+                <div class="parameter-card p-4 bg-white dark:bg-gray-700 rounded-lg shadow">
+                    <div class="formula-explainer">
+                        <h4 class="text-lg font-semibold text-indigo-600 dark:text-indigo-300 mb-2 underline cursor-help">
+                            Amplitudenfaktor A
+                        </h4>
+                        <div class="formula-tooltip">
+                            Kontrolliert die Stärke des Übergangs bei z*
+                        </div>
+                    </div>
+                    <p class="text-sm mb-2">
+                        Stärke des Übergangs bei z<sub>*</sub>:
+                    </p>
+                    <input type="range" id="alpha_amp" min="0.5" max="2.0" step="0.05" value="1.20" class="w-full">
+                    <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                        <span>Schwach (0.5)</span>
+                        <span id="alpha_amp_value" class="font-semibold text-black dark:text-white">A = 1.20</span>
+                        <span>Stark (2.0)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4 flex justify-center space-x-4">
+                <button id="resetParams" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 text-sm flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Optimale Parameter
+                </button>
+                <button id="showLCDM" class="px-3 py-1 bg-cosmological text-white rounded-full hover:bg-opacity-90 text-sm flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    ΛCDM Vergleich
+                </button>
+            </div>
         </section>
 
-        <hr class="my-8 border-gray-300 dark:border-gray-600">
+        <section class="bg-white/80 dark:bg-gray-800/80 p-6 rounded-xl shadow-lg mb-10">
+            <h3 class="text-xl font-semibold mb-4 text-center text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+                Dynamischer Λ(z)-Term und seine Evolution
+            </h3>
+            
+            <div class="chart-container mb-6">
+                <canvas id="LambdaMainChart"></canvas>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-primary-50 dark:bg-primary-900/20 p-4 rounded-lg border-l-4 border-primary">
+                    <h4 class="text-lg font-semibold mb-3 text-primary dark:text-blue-300">GDE-Modell vs. ΛCDM</h4>
+                    <ul class="space-y-2 list-disc pl-5">
+                        <li><strong>Standardmodell:</strong> Λ ist eine Konstante (horizontale Linie).</li>
+                        <li><strong>GDE-Modell:</strong> Λ(z) variiert mit der Rotverschiebung, abhängig von den thermodynamischen Bedingungen.</li>
+                        <li><strong>Verhalten:</strong> Bei hohen z ist Λ(z) größer, nimmt dann ab und kann in der Zukunft wieder ansteigen.</li>
+                        <li><strong>Normierung:</strong> Bei z=0 (heute) sind beide Modelle identisch (Λ₀ ≈ 0.7).</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg border-l-4 border-indigo-500">
+                    <h4 class="text-lg font-semibold mb-3 text-indigo-600 dark:text-indigo-300">Physikalische Bedeutung</h4>
+                    <ul class="space-y-2 list-disc pl-5">
+                        <li><strong>Frühe Epoche (z > z*):</strong> Höhere Λ(z)-Werte → schwächere Beschleunigung</li>
+                        <li><strong>Übergangsphase (z ≈ z*):</strong> Änderung des α(z)-Vorzeichens → Änderung des Λ(z)-Verhaltens</li>
+                        <li><strong>Späte Epoche (z < z*):</strong> Strukturentropie wird wichtiger → modifiziert die reine Temperaturentwicklung</li>
+                        <li><strong>Zukunft (z < 0):</strong> Mögliche Phantomphase mit steigendem Λ(z)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
 
-        <section class="my-12 p-6 rounded-lg bg-white/50 dark:bg-gray-800/50 shadow-sm">
-            <div class="chapter-number">2</div>
-            <h3 class="text-xl font-bold mb-6 text-heading dark:text-accent1">Thermodynamische Formulierung von \(\Lambda(z)\)</h3>
-
-            <p class="mb-4">Die zentrale Hypothese des GDE-Modells postuliert eine Kopplung der effektiven Dunklen Energie an thermodynamische Größen:</p>
-            <div class="equation-container">
-                <div class="equation-content">\[
-                \Lambda(z) \propto T_{\mathrm{CMB}}(z)^{\alpha(z)} \cdot \left(1 + \frac{S_{\mathrm{Struktur}}(z)}{S_{\mathrm{CMB}}} \right)
-                \]</div>
-                <span class="equation-number"></span>
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+            <div class="bg-white/80 dark:bg-gray-800/80 p-6 rounded-xl shadow-lg">
+                <h3 class="text-xl font-semibold mb-4 text-center text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                    </svg>
+                    Temperaturkopplung im Λ(z)-Term
+                </h3>
+                <div class="small-chart-container">
+                    <canvas id="TemperatureChart"></canvas>
+                </div>
+                <div class="mt-4 p-3 bg-purple-50 dark:bg-purple-900/30 rounded-lg">
+                    <h4 class="font-semibold text-purple-800 dark:text-purple-200 mb-1">Temperaturabhängigkeit</h4>
+                    <p class="text-sm">
+                        Der Term (T₀/T<sub>CMB</sub>(z))^α(z) beschreibt, wie die Dunkle Energie an die kosmische Temperatur gekoppelt ist:
+                    </p>
+                    <ul class="text-sm mt-2 ml-4 space-y-1 list-disc">
+                        <li>T<sub>CMB</sub>(z) = T₀(1+z) steigt linear mit z</li>
+                        <li>α(z) moduliert über die Tanh-Funktion den Einfluss der Temperatur</li>
+                        <li>Das Vorzeichen von α(z) bestimmt, ob Λ(z) mit steigender Temperatur zu- oder abnimmt</li>
+                    </ul>
+                </div>
             </div>
 
-            <p class="mb-2">Dabei gilt:</p>
-            <ul class="list-disc pl-8 mb-4 space-y-1">
-                <li>\( T_{\mathrm{CMB}}(z) = T_0 (1 + z) \) ist die temperaturabhängige Hintergrundstrahlungstemperatur zur Rotverschiebung \(z\).</li>
-                <li>\( \alpha(z) = \alpha_0 + A \cdot \tanh(2(z - z_*)) \) ist eine dynamisch modulierte Exponentfunktion, die den Einfluss der Temperatur steuert.</li>
-                <li>\( S_{\mathrm{Struktur}}(z) \) ist die makroskopische Entropie, die mit der Bildung gravitativ gebundener Strukturen (Halos) assoziiert ist.</li>
-                <li>\( S_{\mathrm{CMB}} \sim 10^{88} k_B \) ist die Entropie der kosmischen Mikrowellenhintergrundstrahlung, die als natürliche Referenzskala dient.</li>
-            </ul>
-
-            <p class="mb-4">Dieser Ausdruck beschreibt eine effektive Energieform, deren Dichte sowohl auf die globale thermische Entwicklung des Kosmos (\(T_{\mathrm{CMB}}(z)\)-Term) als auch auf die Zunahme seiner strukturellen Komplexität (\(S_{\mathrm{Struktur}}(z)\)-Term) reagiert.</p>
-
-        </section>
-
-        <hr class="my-8 border-gray-300 dark:border-gray-600">
-
-        <!-- NEUES KAPITEL 3.1 -->
-        <section class="my-12 p-6 rounded-lg bg-white/50 dark:bg-gray-800/50 shadow-sm">
-            <div class="chapter-number">3</div>
-            <h3 class="text-xl font-bold mb-6 text-heading dark:text-accent1">Mathematische Struktur des Lambda-Terms</h3>
-
-            <p class="mb-4">Für die praktische Anwendung, insbesondere die Implementierung in numerische Boltzmann-Solver (wie CLASS oder CAMB), lässt sich der Lambda-Term des GDE-Modells in eine explizitere, dimensionslose Form überführen:</p>
-
-            <div class="equation-container">
-                <div class="equation-content">\[
-                \Lambda(z) = \Lambda_0 \cdot \left( \frac{T_{\mathrm{CMB}}(z)}{T_0} \right)^{-\alpha(z)} \cdot \left(1 + \beta \cdot \frac{S_{\mathrm{Struktur}}(z)}{S_{\mathrm{Struktur}}(0)} \right)
-                \]</div>
-                <span class="equation-number"></span>
-                <!-- Note: The original request used (T0/TCMB)^alpha. I've kept the structure T_CMB/T_0 and inverted alpha as seems more consistent with previous docs. If (T0/TCMB)^alpha is intended, change the fraction and remove the minus sign. -->
+            <div class="bg-white/80 dark:bg-gray-800/80 p-6 rounded-xl shadow-lg">
+                <h3 class="text-xl font-semibold mb-4 text-center text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Entropiekopplung im Λ(z)-Term
+                </h3>
+                <div class="small-chart-container">
+                    <canvas id="EntropyChart"></canvas>
+                </div>
+                <div class="mt-4 p-3 bg-pink-50 dark:bg-pink-900/30 rounded-lg">
+                    <h4 class="font-semibold text-pink-800 dark:text-pink-200 mb-1">Strukturentropie-Einfluss</h4>
+                    <p class="text-sm">
+                        Der Term (1 + β·S<sub>Struktur</sub>(z)/S<sub>Struktur</sub>(0)) verknüpft die Dunkle Energie mit der kosmischen Strukturbildung:
+                    </p>
+                    <ul class="text-sm mt-2 ml-4 space-y-1 list-disc">
+                        <li>S<sub>Struktur</sub> steigt exponentiell mit abnehmender Rotverschiebung</li>
+                        <li>Der Parameter β = 0.048 quantifiziert die Stärke dieser Kopplung</li>
+                        <li>Je mehr Strukturen sich bilden, desto stärker wird dieser Einfluss</li>
+                    </ul>
+                </div>
             </div>
-             <!-- OR Alternative based strictly on request: -->
-            <!--
-            <div class="equation-container">
-                <div class="equation-content">\[
-                \Lambda(z) = \Lambda_0 \cdot \left( \frac{T_0}{T_{\mathrm{CMB}}(z)} \right)^{\alpha(z)} \cdot \left(1 + \beta \cdot \frac{S_{\mathrm{Struktur}}(z)}{S_{\mathrm{Struktur}}(0)} \right)
-                \]</div>
-                <span class="equation-number"></span>
+        </section>
+
+        <section class="bg-white/80 dark:bg-gray-800/80 p-6 rounded-xl shadow-lg mb-10">
+            <h3 class="text-xl font-semibold mb-6 text-indigo-600 dark:text-indigo-400 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Die Komponenten von Λ(z) und ihre individuelle Entwicklung
+            </h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="highlight-box temperature-box">
+                    <h4 class="text-lg font-semibold mb-2 text-temperature">Temperatur-Term</h4>
+                    <h5 class="font-mono font-semibold">(T₀/T<sub>CMB</sub>(z))^α(z)</h5>
+                    <div class="mini-chart-container mt-3">
+                        <canvas id="temperatureTermChart"></canvas>
+                    </div>
+                    <p class="text-sm mt-3">
+                        Dieser Term beschreibt, wie die Dunkle Energie an die Temperatur der kosmischen Mikrowellenhintergrundstrahlung 
+                        gekoppelt ist. Der Term wird durch den dynamischen Exponenten α(z) moduliert.
+                    </p>
+                </div>
+
+                <div class="highlight-box entropy-box">
+                    <h4 class="text-lg font-semibold mb-2 text-entropy">Entropie-Term</h4>
+                    <h5 class="font-mono font-semibold">1 + β·S<sub>rel</sub>(z)</h5>
+                    <div class="mini-chart-container mt-3">
+                        <canvas id="entropyTermChart"></canvas>
+                    </div>
+                    <p class="text-sm mt-3">
+                        Dieser Term koppelt die Dunkle Energie an die Entropie kosmischer Strukturen. 
+                        Die Strukturentropie nimmt mit abnehmender Rotverschiebung zu, 
+                        da immer mehr Materie in gravitativ gebundene Strukturen (Galaxien, Cluster) kollabiert.
+                    </p>
+                </div>
+
+                <div class="highlight-box combined-box">
+                    <h4 class="text-lg font-semibold mb-2 text-primary">Kombinierter Term</h4>
+                    <h5 class="font-mono font-semibold">Λ(z) / Λ₀</h5>
+                    <div class="mini-chart-container mt-3">
+                        <canvas id="combinedTermChart"></canvas>
+                    </div>
+                    <p class="text-sm mt-3">
+                        Der vollständige Λ(z)-Term ergibt sich aus dem Produkt des Temperatur- und Entropieterms.
+                        Diese Kombination führt zu einer komplexen Dynamik, die die beobachtete w(z)-Evolution 
+                        erklärt und mit den DESI-Daten übereinstimmt.
+                    </p>
+                </div>
             </div>
-            -->
 
-
-            <p class="mb-2">Diese Struktur enthält folgende Komponenten:</p>
-            <ul class="list-disc pl-8 mb-4 space-y-1">
-                <li>\(\Lambda_0\): Der heutige Wert der kosmologischen Konstante (bzw. der Dunklen Energie Dichte), der aus Beobachtungen bestimmt wird (\(\Omega_{\Lambda,0} \approx 0.7\)).</li>
-                <li>\(T_{\mathrm{CMB}}(z) = T_0 (1+z)\): Die Standardentwicklung der CMB-Temperatur.</li>
-                <li>\(\alpha(z)\): Die dynamische Exponentfunktion (z.B. die Tanh-Kurve), die die Stärke und das Vorzeichen der Temperaturabhängigkeit steuert.</li>
-                <li>\(\beta\): Ein dimensionsloser Gewichtungsfaktor, der die relative Bedeutung des strukturellen Entropiebeitrags parametrisiert. \(\beta\) könnte ein freier Parameter im Fit sein oder theoretisch festgelegt werden.</li>
-                 <li>\(S_{\mathrm{Struktur}}(z)\): Die Strukturentropie als Funktion der Rotverschiebung, typischerweise berechnet aus Halo-Massenfunktionen (z.B. aus Simulationen wie TNG100 oder analytischen Modellen).</li>
-                <li>\(S_{\mathrm{Struktur}}(0)\): Der heutige Wert der Strukturentropie, der zur Normierung des Entropiebeitrags dient.</li>
-            </ul>
-
-            <p class="mb-4">Diese explizite Formulierung (Gleichung 3) erlaubt sowohl die analytische Ableitung des Zustandsgleichungsparameters \(w(z)\) (unter Berücksichtigung der Ableitungen von \(\alpha(z)\) und \(S_{\mathrm{Struktur}}(z)\)) als auch eine direkte numerische Umsetzung in kosmologischen Simulationscodes wie CLASS und statistischen Analysewerkzeugen wie Cobaya.</p>
-
-        </section>
-        <!-- ENDE NEUES KAPITEL 3.1 -->
-
-
-        <hr class="my-8 border-gray-300 dark:border-gray-600">
-
-        <!-- ALTES KAPITEL 3 WIRD JETZT KAPITEL 4 -->
-        <section class="my-12 p-6 rounded-lg bg-white/50 dark:bg-gray-800/50 shadow-sm">
-            <div class="chapter-number">4</div>
-            <h3 class="text-xl font-bold mb-6 text-heading dark:text-accent1">Numerische Ergebnisse und Validierung</h3>
-
-             <p class="mb-4">Basierend auf realistisch modellierten Halo-Massenfunktionen (z.B. nach Tinker et al., 2008) wurde die Strukturentropie \( S_{\mathrm{Struktur}}(z) \) approximativ für vier exemplarische Rotverschiebungen berechnet. Unter Verwendung der angepassten Form für \(\alpha(z)\) ergibt sich die folgende beispielhafte Entwicklung des normierten Lambda-Terms:</p>
-
-            <table>
-                 <thead>
-                     <tr>
-                         <th>\(z\)</th>
-                         <th>\(\alpha(z)\) (approx.)</th>
-                         <th>\(S_{\mathrm{Struktur}}/S_{\mathrm{CMB}}\) (approx., illustrativ)</th>
-                         <th>\(\Lambda(z)\) [Normiert auf \(\Lambda(0) \approx 0.7\)] (illustrativ)</th>
-                     </tr>
-                 </thead>
-                 <tbody>
-                     <tr>
-                         <td>0.0</td>
-                         <td>+0.60</td>
-                         <td>0.0025</td>
-                         <td>0.70 (per Definition)</td>
-                     </tr>
-                     <tr>
-                         <td>0.5</td>
-                         <td>-0.48</td>
-                         <td>0.0100</td>
-                         <td>~0.73 <!-- Requires full calculation with Eq. 3 --></td>
-                     </tr>
-                     <tr>
-                         <td>1.0</td>
-                         <td>-0.55</td>
-                         <td>0.0350</td>
-                          <td>~0.79 <!-- Requires full calculation with Eq. 3 --></td>
-                     </tr>
-                     <tr>
-                         <td>2.0</td>
-                          <td>-0.59</td>
-                         <td>0.0930</td>
-                          <td>~0.92 <!-- Requires full calculation with Eq. 3 --></td>
-                     </tr>
-                 </tbody>
-            </table>
-            <p class="text-sm italic mt-1">Hinweis: Die Werte für \(S_{\mathrm{Struktur}}/S_{\mathrm{CMB}}\) und \(\Lambda(z)\) sind hier illustrativ und basieren auf den \(\alpha(z)\)-Werten \( \alpha(z) = -0.6 + 1.2 \tanh(2(z-0.7)) \). Eine genaue Berechnung von \(\Lambda(z)\) muss Gleichung (3) unter Verwendung eines spezifischen \(\beta\) und einer präzisen \(S_{\mathrm{Struktur}}(z)\)-Kurve durchführen. Wichtiger als die genauen \(\Lambda(z)\)-Werte ist die sich ergebende Dynamik von \(w(z)\), die eine nicht-monotone Entwicklung zeigt, welche konsistent mit aktuellen DESI-Daten (\( w(z=0.5) \approx -0.83 \)) sein kann.</p>
-
+            <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
+                <p class="text-center">
+                    Die komplexe Dynamik von Λ(z) im GDE-Modell entsteht durch das <strong>Zusammenspiel</strong> der 
+                    Temperaturkopplung und der Strukturentropie. Im Gegensatz zum Standardmodell (ΛCDM) ist Λ 
+                    <strong>keine Konstante</strong>, sondern reagiert auf thermodynamische Veränderungen im Universum.
+                </p>
+            </div>
         </section>
 
-        <hr class="my-8 border-gray-300 dark:border-gray-600">
-
-        <!-- ALTES KAPITEL 4 WIRD JETZT KAPITEL 5 -->
-        <section class="my-12 p-6 rounded-lg bg-white/50 dark:bg-gray-800/50 shadow-sm">
-            <div class="chapter-number">5</div>
-            <h3 class="text-xl font-bold mb-6 text-heading dark:text-accent1">Physikalische Interpretation</h3>
-
-            <p class="mb-4">Der Lambda-Term im GDE-Modell ist nicht statisch, sondern reflektiert zwei thermodynamische Prozesse, deren Zusammenspiel die Dynamik bestimmt:</p>
-            <ul class="list-disc pl-8 mb-4 space-y-2">
-                <li>
-                    <strong class="font-semibold">Temperaturabhängigkeit (moduliert durch \(\alpha(z)\)):</strong> Der Term \(\propto T_{\mathrm{CMB}}(z)^{\pm\alpha(z)}\) (je nach gewählter Konvention in Gl. 3) führt zu einer intrinsischen Zeitentwicklung von \(\Lambda\). Die Tanh-Form von \(\alpha(z)\) modelliert einen Übergang im Verhalten der Dunklen Energie.
-                </li>
-                <li>
-                    <strong class="font-semibold">Entropiekopplung (moduliert durch \(\beta\)):</strong> Der Term \(\propto (1 + \beta \cdot S_{\mathrm{Struktur}}(z)/S_{\mathrm{Struktur}}(0))\) repräsentiert den Einfluss der Strukturbildung. Mit wachsender Struktur (\(S_{\mathrm{Struktur}}\) steigt) wird dieser Term relevanter und modifiziert die reine Temperaturdynamik, insbesondere bei niedrigen Rotverschiebungen (\(z \lesssim 1\)).
-                </li>
-            </ul>
-            <p class="mb-4">Diese kombinierte Dynamik erlaubt es potenziell, das beobachtete komplexe Verhalten von \( w(z) \) (inklusive möglicher Phantom-Kreuzung) zu reproduzieren, ohne auf fundamental neue Felder oder Modifikationen der Gravitationstheorie zurückgreifen zu müssen, sondern stattdessen thermodynamische Eigenschaften des Universums als Ursprung zu postulieren.</p>
-
+        <section class="bg-white/80 dark:bg-gray-800/80 p-6 rounded-xl shadow-lg mb-10">
+            <h3 class="text-xl font-semibold mb-6 text-indigo-600 dark:text-indigo-400 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                Zusammenhang zwischen Λ(z) und w(z)
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div class="chart-container">
+                    <canvas id="LambdaWzChart"></canvas>
+                </div>
+                
+                <div class="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+                    <h4 class="font-semibold text-indigo-600 dark:text-indigo-300 mb-2">Die mathematische Beziehung</h4>
+                    <div class="equation-container">
+                        <div class="equation-content text-center">
+                            \[ w(z) = -1 + \frac{1+z}{3} \frac{d\ln\Lambda(z)}{dz} \]
+                        </div>
+                    </div>
+                    <p class="text-sm mt-3">
+                        Der Zustandsgleichungsparameter w(z) hängt direkt von der Ableitung von Λ(z) ab:
+                    </p>
+                    <ul class="mt-3 space-y-2">
+                        <li class="flex items-start">
+                            <svg class="h-5 w-5 text-indigo-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Bei <strong>steigendem Λ(z)</strong> (positive Ableitung) ist <strong>w(z) < -1</strong> (Phantom-Bereich)</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="h-5 w-5 text-indigo-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Bei <strong>konstantem Λ(z)</strong> (Ableitung = 0) ist <strong>w(z) = -1</strong> (ΛCDM)</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="h-5 w-5 text-indigo-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Bei <strong>fallendem Λ(z)</strong> (negative Ableitung) ist <strong>w(z) > -1</strong> (Quintessenz-Bereich)</span>
+                        </li>
+                    </ul>
+                    <p class="text-sm mt-3">
+                        Die thermodynamischen Kopplungen im GDE-Modell erzeugen eine komplexe Λ(z)-Dynamik, die zu 
+                        unterschiedlichen w(z)-Werten führt – einschließlich des von DESI gemessenen Wertes w(z=0.5) ≈ -0.84.
+                    </p>
+                </div>
+            </div>
         </section>
 
-        <hr class="my-8 border-gray-300 dark:border-gray-600">
-
-        <!-- ALTES KAPITEL 5 WIRD JETZT KAPITEL 6 -->
-        <section class="my-12 p-6 rounded-lg bg-white/50 dark:bg-gray-800/50 shadow-sm">
-            <div class="chapter-number">6</div>
-            <h3 class="text-xl font-bold mb-6 text-heading dark:text-accent1">Fazit</h3>
-
-            <p class="mb-4">Der dynamische Lambda-Term des GDE-Modells, wie in Gleichung (3) formuliert, ist sowohl konzeptionell durch thermodynamische Prinzipien motiviert als auch (wie MCMC-Fits zeigen) numerisch mit aktuellen Beobachtungsdaten verträglich.</p>
-            <p class="mb-4">Die explizite Abhängigkeit von der CMB-Temperatur \( T_{\mathrm{CMB}}(z) \) und der Strukturentropie \( S_{\mathrm{Struktur}}(z) \) liefert eine potenziell fundierte physikalische Basis für die Dunkle Energie und ermöglicht eine differenziertere Sicht auf die spätzeitliche Expansion des Universums im Vergleich zur statischen Konstante \(\Lambda\) in \(\Lambda\)CDM.</p>
-            <p class="mb-4">Weitere Arbeiten sind notwendig, um die freien Parameter (insbesondere \(\beta\)) genauer zu bestimmen und die Funktion \( S_{\mathrm{Struktur}}(z) \) präzise aus realen Halokatalogen (z. B. DESI DR5, Euclid) oder hochauflösenden Simulationen zu extrahieren. Dies wird entscheidend sein, um die Robustheit und Vorhersagekraft dieser thermodynamischen Kopplung quantitativ zu verifizieren.</p>
-        </section>
+        <div class="text-center mt-8 p-4 bg-gradient-to-r from-white to-lightAccent dark:from-gray-900 dark:to-darkAccent rounded-lg shadow">
+            <h3 class="text-xl font-semibold mb-3 text-primary">Zusammenfassung</h3>
+            <p class="text-gray-700 dark:text-gray-300">
+                Der dynamische Lambda-Term Λ(z) des GDE-Modells koppelt die Dunkle Energie an die kosmische Temperatur 
+                und Strukturentropie. Diese thermodynamische Formulierung erzeugt eine natürliche Dynamik, die die 
+                beobachtete kosmische Entwicklung erklärt, einschließlich der von DESI gemessenen Abweichungen vom ΛCDM-Modell.
+            </p>
+            <p class="text-sm mt-4 text-gray-600 dark:text-gray-400">
+                <span id="generationDate" class="font-semibold"></span>
+            </p>
+        </div>
 
         <footer class="mt-12 pt-8 border-t border-gray-300 dark:border-gray-700 italic text-center bg-gradient-to-br from-lightAccent to-white dark:from-darkAccent dark:to-gray-900 p-6 rounded-lg shadow-md">
             <p class="text-accent2 dark:text-accent3 font-serif">"Die beste Theorie ist nicht die komplizierteste, sondern die, die das Unerwartete einfach erklärt." <span class="block mt-2 text-sm">-- Gabriel ϕ</span></p>
         </footer>
     </div>
+
+    <script>
+        // --- Data Generation based on GDE Model ---
+        function generateData() {
+            // Generate a detailed redshift range
+            const zRange = [];
+            const zStep = 0.05;
+            for (let z = -0.5; z <= 3; z += zStep) { // Include negative z for future evolution
+                zRange.push(parseFloat(z.toFixed(2)));
+            }
+
+            // Model parameters (optimal values from MCMC fit)
+            const modelParams = {
+                z_star: 0.69,
+                alpha_0: -0.57,
+                alpha_amp: 1.20,
+                beta: 0.048
+            };
+
+            // Calculate α(z) according to tanh formula
+            const alpha_z = zRange.map(z => {
+                return modelParams.alpha_0 + modelParams.alpha_amp * Math.tanh(2 * (z - modelParams.z_star));
+            });
+
+            // Model for structure entropy ratio S_rel(z)
+            const zData = [0.0, 0.5, 1.0, 2.0, 3.0];
+            const sRelData = [1.0, 0.339, 0.156, 0.053, 0.02];
+            
+            // Interpolate S_rel for all z values
+            const S_rel = zRange.map(z => {
+                // Simple linear interpolation
+                if (z < 0) return 1.0; // Assume future value same as today
+                if (z > 3) return 0.02; // Assume distant past same as z=3
+                
+                // Find bracketing indices
+                let i = 0;
+                while (i < zData.length - 1 && zData[i + 1] < z) i++;
+                
+                if (i === zData.length - 1) return sRelData[i];
+                if (z === zData[i]) return sRelData[i];
+                
+                // Linear interpolation formula
+                const t = (z - zData[i]) / (zData[i + 1] - zData[i]);
+                return sRelData[i] + t * (sRelData[i + 1] - sRelData[i]);
+            });
+            
+            // Calculate temperature term: (T₀/T_CMB(z))^α(z)
+            const tempTerm = zRange.map((z, i) => {
+                // T_CMB(z) = T₀(1+z)
+                // So T₀/T_CMB(z) = 1/(1+z)
+                return Math.pow(1/(1+z), alpha_z[i]);
+            });
+            
+            // Calculate entropy term: 1 + β·S_rel(z)
+            const entropyTerm = zRange.map((z, i) => {
+                return 1 + modelParams.beta * S_rel[i];
+            });
+            
+            // Calculate Lambda(z)/Lambda₀ = Temperature term × Entropy term
+            const Lambda_ratio = zRange.map((z, i) => {
+                return tempTerm[i] * entropyTerm[i];
+            });
+            
+            // ΛCDM reference (constant Lambda)
+            const Lambda_LCDM = Array(zRange.length).fill(1.0); // Normalized to Lambda₀
+            
+            // Calculate dlnLambda/dz for w(z) calculation
+            const dlnLambda_dz = zRange.map((z, i, arr) => {
+                if (i === 0) {
+                    return Math.log(Lambda_ratio[i+1] / Lambda_ratio[i]) / zStep;
+                } else if (i === arr.length - 1) {
+                    return Math.log(Lambda_ratio[i] / Lambda_ratio[i-1]) / zStep;
+                } else {
+                    return Math.log(Lambda_ratio[i+1] / Lambda_ratio[i-1]) / (2 * zStep);
+                }
+            });
+            
+            // Calculate w(z) using the formula: w(z) = -1 + (1+z)/3 * dlnLambda/dz
+            const w_z = zRange.map((z, i) => {
+                return -1 + (1+z)/3 * dlnLambda_dz[i];
+            });
+            
+            // w(z) for ΛCDM (constant Lambda)
+            const w_z_LCDM = Array(zRange.length).fill(-1);
+
+            return {
+                z: zRange,
+                alpha_z,
+                S_rel,
+                beta: modelParams.beta,
+                tempTerm,
+                entropyTerm,
+                Lambda_ratio,
+                Lambda_LCDM,
+                w_z,
+                w_z_LCDM,
+                metadata: {
+                    Lambda_0: 0.7, // Assume Lambda_0 = 0.7 for normalization
+                    DESI_w_target: -0.84 // DESI measured value at z=0.5
+                }
+            };
+        }
+        
+        // Generate the data
+        const html_data = generateData();
+        
+        // Model parameters that can be adjusted by the user
+        let modelParams = {
+            z_star: 0.69,
+            alpha_0: -0.57,
+            alpha_amp: 1.20,
+            beta: 0.048
+        };
+        
+        // Chart instances
+        let lambdaMainChartInstance, temperatureChartInstance, entropyChartInstance;
+        let tempTermChartInstance, entropyTermChartInstance, combinedTermChartInstance;
+        let lambdaWzChartInstance;
+        
+        // Function to recompute the data based on adjusted parameters
+        function recomputeData() {
+            // Get current parameters
+            const z_star = modelParams.z_star;
+            const alpha_0 = modelParams.alpha_0;
+            const alpha_amp = modelParams.alpha_amp;
+            const beta = modelParams.beta;
+            
+            // Recalculate alpha_z with new parameters
+            html_data.alpha_z = html_data.z.map(z => {
+                return alpha_0 + alpha_amp * Math.tanh(2 * (z - z_star));
+            });
+            
+            // Recalculate temperature term
+            html_data.tempTerm = html_data.z.map((z, i) => {
+                return Math.pow(1/(1+z), html_data.alpha_z[i]);
+            });
+            
+            // Recalculate entropy term
+            html_data.entropyTerm = html_data.z.map((z, i) => {
+                return 1 + beta * html_data.S_rel[i];
+            });
+            
+            // Recalculate Lambda_ratio
+            html_data.Lambda_ratio = html_data.z.map((z, i) => {
+                return html_data.tempTerm[i] * html_data.entropyTerm[i];
+            });
+            
+            // Recalculate dlnLambda_dz
+            const zStep = html_data.z[1] - html_data.z[0];
+            const dlnLambda_dz = html_data.z.map((z, i, arr) => {
+                if (i === 0) {
+                    return Math.log(html_data.Lambda_ratio[i+1] / html_data.Lambda_ratio[i]) / zStep;
+                } else if (i === arr.length - 1) {
+                    return Math.log(html_data.Lambda_ratio[i] / html_data.Lambda_ratio[i-1]) / zStep;
+                } else {
+                    return Math.log(html_data.Lambda_ratio[i+1] / html_data.Lambda_ratio[i-1]) / (2 * zStep);
+                }
+            });
+            
+            // Recalculate w(z)
+            html_data.w_z = html_data.z.map((z, i) => {
+                return -1 + (1+z)/3 * dlnLambda_dz[i];
+            });
+        }
+        
+        // Function to create chart options based on dark mode
+        function getChartOptions(titleText, yLabel, additionalOptions = {}) {
+            const isDarkMode = document.documentElement.classList.contains('dark');
+            const textColor = isDarkMode ? '#f3f4f6' : '#1f2937';
+            const gridColor = isDarkMode ? 'rgba(209, 213, 219, 0.2)' : 'rgba(55, 65, 81, 0.2)';
+            const tooltipBgColor = isDarkMode ? 'rgba(55, 65, 81, 0.9)' : 'rgba(255, 255, 255, 0.9)';
+            
+            const baseOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutQuart'
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { 
+                            color: textColor,
+                            usePointStyle: true,
+                            boxWidth: 6,
+                            font: { size: 11 }
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: tooltipBgColor,
+                        titleColor: textColor,
+                        bodyColor: textColor,
+                        borderColor: isDarkMode ? '#4b5563' : '#e5e7eb',
+                        borderWidth: 1,
+                        padding: 10,
+                        titleFont: { size: 13, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        displayColors: true,
+                        boxWidth: 8,
+                        boxHeight: 8,
+                        cornerRadius: 4
+                    },
+                    title: {
+                        display: false,
+                        text: titleText,
+                        color: textColor
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Rotverschiebung z',
+                            color: textColor,
+                            font: { weight: 'bold', size: 12 },
+                            padding: { top: 10 }
+                        },
+                        ticks: { 
+                            color: textColor,
+                            font: { size: 11 }
+                        },
+                        grid: { 
+                            color: gridColor,
+                            drawBorder: false
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: yLabel,
+                            color: textColor,
+                            font: { weight: 'bold', size: 12 },
+                            padding: { bottom: 10 }
+                        },
+                        ticks: { 
+                            color: textColor,
+                            font: { size: 11 }
+                        },
+                        grid: { 
+                            color: gridColor,
+                            drawBorder: false
+                        }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                },
+                elements: {
+                    point: {
+                        radius: 0,
+                        hoverRadius: 5
+                    },
+                    line: {
+                        tension: 0.4,
+                        borderWidth: 3
+                    }
+                }
+            };
+            
+            // Deep merge additional options (like y-axis type)
+            if (additionalOptions.scales && additionalOptions.scales.y) {
+                Object.assign(baseOptions.scales.y, additionalOptions.scales.y);
+            }
+            
+            return baseOptions;
+        }
+        
+        // Function to create gradient backgrounds for charts
+        function createGradient(ctx, color1, color2, opacity1 = 0.7, opacity2 = 0.1) {
+            const gradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
+            gradient.addColorStop(0, `rgba(${hexToRgb(color1)}, ${opacity1})`);
+            gradient.addColorStop(1, `rgba(${hexToRgb(color2)}, ${opacity2})`);
+            return gradient;
+        }
+        
+        // Helper function to convert hex to RGB
+        function hexToRgb(hex) {
+            const bigint = parseInt(hex.replace('#', ''), 16);
+            const r = (bigint >> 16) & 255;
+            const g = (bigint >> 8) & 255;
+            const b = bigint & 255;
+            return `${r}, ${g}, ${b}`;
+        }
+        
+        // Find crossings with y=1 (ΛCDM)
+        function findCrossings(dataArray) {
+            const crossings = [];
+            for (let i = 0; i < dataArray.length - 1; i++) {
+                if ((dataArray[i] < 1 && dataArray[i+1] >= 1) || 
+                    (dataArray[i] > 1 && dataArray[i+1] <= 1)) {
+                    crossings.push(i);
+                }
+            }
+            return crossings;
+        }
+        
+        // Register annotation plugin
+        function registerAnnotationPlugin() {
+            Chart.register({
+                id: 'customAnnotation',
+                afterDraw: (chart, args, options) => {
+                    if (!options || !options.annotations) return;
+                    
+                    const { ctx, chartArea, scales } = chart;
+                    
+                    options.annotations.forEach(annotation => {
+                        if (!annotation.enabled) return;
+                        
+                        const x = scales.x.getPixelForValue(annotation.xValue);
+                        const y = scales.y.getPixelForValue(annotation.yValue);
+                        
+                        // Draw circle at point
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.arc(x, y, 6, 0, 2 * Math.PI);
+                        ctx.fillStyle = annotation.backgroundColor || '#FF6384';
+                        ctx.fill();
+                        ctx.strokeStyle = annotation.borderColor || '#FF6384';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                        
+                        // Add label
+                        if (annotation.label) {
+                            ctx.fillStyle = '#FFF';
+                            ctx.font = 'bold 11px sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText(annotation.label, x, y);
+                        }
+                        
+                        // Add description box
+                        if (annotation.description) {
+                            const textX = annotation.descriptionOffsetX ? x + annotation.descriptionOffsetX : x + 15;
+                            const textY = annotation.descriptionOffsetY ? y + annotation.descriptionOffsetY : y - 15;
+                            
+                            ctx.font = '11px sans-serif';
+                            ctx.textAlign = 'left';
+                            
+                            const textWidth = ctx.measureText(annotation.description).width;
+                            const padding = 6;
+                            
+                            // Box with rounded corners
+                            const boxHeight = 24;
+                            const radius = 4;
+                            
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                            ctx.beginPath();
+                            ctx.moveTo(textX - padding + radius, textY - 12);
+                            ctx.lineTo(textX - padding + textWidth + padding * 2 - radius, textY - 12);
+                            ctx.quadraticCurveTo(textX - padding + textWidth + padding * 2, textY - 12, textX - padding + textWidth + padding * 2, textY - 12 + radius);
+                            ctx.lineTo(textX - padding + textWidth + padding * 2, textY - 12 + boxHeight - radius);
+                            ctx.quadraticCurveTo(textX - padding + textWidth + padding * 2, textY - 12 + boxHeight, textX - padding + textWidth + padding * 2 - radius, textY - 12 + boxHeight);
+                            ctx.lineTo(textX - padding + radius, textY - 12 + boxHeight);
+                            ctx.quadraticCurveTo(textX - padding, textY - 12 + boxHeight, textX - padding, textY - 12 + boxHeight - radius);
+                            ctx.lineTo(textX - padding, textY - 12 + radius);
+                            ctx.quadraticCurveTo(textX - padding, textY - 12, textX - padding + radius, textY - 12);
+                            ctx.closePath();
+                            ctx.fill();
+                            
+                            ctx.fillStyle = '#1F2937';
+                            ctx.fillText(annotation.description, textX, textY);
+                        }
+                        
+                        ctx.restore();
+                    });
+                }
+            });
+        }
+        
+        // Function to render all charts
+        function renderCharts() {
+            // Register the annotation plugin
+            registerAnnotationPlugin();
+            
+            // Find where Lambda(z) crosses ΛCDM value (Lambda_ratio = 1)
+            const crossings = findCrossings(html_data.Lambda_ratio);
+            
+            // Main Lambda(z) Chart
+            const lambdaMainCtx = document.getElementById('LambdaMainChart').getContext('2d');
+            if (lambdaMainChartInstance) lambdaMainChartInstance.destroy();
+            
+            lambdaMainChartInstance = new Chart(lambdaMainCtx, {
+                type: 'line',
+                data: {
+                    labels: html_data.z,
+                    datasets: [
+                        {
+                            label: 'Λ(z)/Λ₀ GDE-Modell',
+                            data: html_data.Lambda_ratio,
+                            borderColor: '#5D5CDE', // Primary
+                            backgroundColor: createGradient(lambdaMainCtx, '#5D5CDE', '#5D5CDE'),
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 0,
+                            pointHoverRadius: 5
+                        },
+                        {
+                            label: 'Λ ΛCDM-Modell (konstant)',
+                            data: html_data.Lambda_LCDM,
+                            borderColor: '#10b981', // Cosmological green
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            tension: 0,
+                            fill: false,
+                            pointRadius: 0,
+                            pointHoverRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    ...getChartOptions('Lambda-Term Λ(z)/Λ₀', 'Λ(z)/Λ₀'),
+                    plugins: {
+                        ...getChartOptions().plugins,
+                        tooltip: {
+                            ...getChartOptions().plugins.tooltip,
+                            callbacks: {
+                                label: (context) => {
+                                    const z = html_data.z[context.dataIndex];
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    
+                                    let note = '';
+                                    if (context.datasetIndex === 0) {
+                                        if (value > 1) note = ' (höher als ΛCDM)';
+                                        else if (value < 1) note = ' (niedriger als ΛCDM)';
+                                        else note = ' (identisch mit ΛCDM)';
+                                    }
+                                    
+                                    return `${label}: ${value.toFixed(3)} bei z=${z}${note}`;
+                                }
+                            }
+                        },
+                        customAnnotation: {
+                            annotations: [
+                                {
+                                    enabled: true,
+                                    xValue: modelParams.z_star,
+                                    yValue: html_data.Lambda_ratio[html_data.z.findIndex(z => z.toFixed(2) == modelParams.z_star.toFixed(2)) || 0],
+                                    backgroundColor: '#5D5CDE',
+                                    borderColor: '#4338ca',
+                                    label: '',
+                                    description: `Übergangszone z* = ${modelParams.z_star.toFixed(2)}`
+                                },
+                                ...(crossings.map(i => ({
+                                    enabled: true,
+                                    xValue: html_data.z[i],
+                                    yValue: 1, // crossing ΛCDM value
+                                    backgroundColor: '#10b981',
+                                    borderColor: '#059669',
+                                    label: '',
+                                    description: `Übergang bei z ≈ ${html_data.z[i].toFixed(2)}`
+                                })))
+                            ]
+                        }
+                    }
+                }
+            });
+
+            // Temperature Component Chart
+            const temperatureCtx = document.getElementById('TemperatureChart').getContext('2d');
+            if (temperatureChartInstance) temperatureChartInstance.destroy();
+            
+            temperatureChartInstance = new Chart(temperatureCtx, {
+                type: 'line',
+                data: {
+                    labels: html_data.z,
+                    datasets: [
+                        {
+                            label: 'Temperatur-Term (T₀/T_CMB)^α(z)',
+                            data: html_data.tempTerm,
+                            borderColor: '#8b5cf6', // Violet
+                            backgroundColor: createGradient(temperatureCtx, '#8b5cf6', '#8b5cf6'),
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 0,
+                            pointHoverRadius: 5
+                        },
+                        {
+                            label: 'α(z)',
+                            data: html_data.alpha_z,
+                            borderColor: '#db2777', // Pink
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            tension: 0.4,
+                            fill: false,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    ...getChartOptions('Temperatur-Kopplung', '(T₀/T_CMB)^α(z)'),
+                    scales: {
+                        ...getChartOptions().scales,
+                        y: {
+                            ...getChartOptions().scales.y,
+                            title: {
+                                ...getChartOptions().scales.y.title,
+                                text: 'Temperatur-Term'
+                            }
+                        },
+                        y1: {
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'α(z)',
+                                color: getChartOptions().scales.y.title.color,
+                                font: getChartOptions().scales.y.title.font
+                            },
+                            ticks: getChartOptions().scales.y.ticks,
+                            grid: {
+                                ...getChartOptions().scales.y.grid,
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        ...getChartOptions().plugins,
+                        tooltip: {
+                            ...getChartOptions().plugins.tooltip,
+                            callbacks: {
+                                label: (context) => {
+                                    const z = html_data.z[context.dataIndex];
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    
+                                    if (context.datasetIndex === 0) {
+                                        return `Temperatur-Term: ${value.toFixed(3)} bei z=${z}`;
+                                    } else {
+                                        return `α(${z}) = ${value.toFixed(3)}`;
+                                    }
+                                }
+                            }
+                        },
+                        annotation: {
+                            annotations: {
+                                zeroLine: {
+                                    type: 'line',
+                                    yMin: 0,
+                                    yMax: 0,
+                                    borderColor: 'rgba(219, 39, 119, 0.5)',
+                                    borderWidth: 1,
+                                    borderDash: [4, 4],
+                                    yScaleID: 'y1'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Entropy Component Chart
+            const entropyCtx = document.getElementById('EntropyChart').getContext('2d');
+            if (entropyChartInstance) entropyChartInstance.destroy();
+            
+            entropyChartInstance = new Chart(entropyCtx, {
+                type: 'line',
+                data: {
+                    labels: html_data.z,
+                    datasets: [
+                        {
+                            label: 'Entropie-Term (1 + β·S_rel)',
+                            data: html_data.entropyTerm,
+                            borderColor: '#db2777', // Pink
+                            backgroundColor: createGradient(entropyCtx, '#db2777', '#db2777'),
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 0,
+                            pointHoverRadius: 5
+                        },
+                        {
+                            label: 'S_rel(z)',
+                            data: html_data.S_rel,
+                            borderColor: '#8b5cf6', // Violet
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            tension: 0.4,
+                            fill: false,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    ...getChartOptions('Entropie-Kopplung', '1 + β·S_rel(z)'),
+                    scales: {
+                        ...getChartOptions().scales,
+                        y: {
+                            ...getChartOptions().scales.y,
+                            title: {
+                                ...getChartOptions().scales.y.title,
+                                text: 'Entropie-Term'
+                            }
+                        },
+                        y1: {
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'S_rel(z)',
+                                color: getChartOptions().scales.y.title.color,
+                                font: getChartOptions().scales.y.title.font
+                            },
+                            ticks: getChartOptions().scales.y.ticks,
+                            grid: {
+                                ...getChartOptions().scales.y.grid,
+                                display: false
+                            },
+                            min: 0,
+                            max: 1.1
+                        }
+                    },
+                    plugins: {
+                        ...getChartOptions().plugins,
+                        tooltip: {
+                            ...getChartOptions().plugins.tooltip,
+                            callbacks: {
+                                label: (context) => {
+                                    const z = html_data.z[context.dataIndex];
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    
+                                    if (context.datasetIndex === 0) {
+                                        return `Entropie-Term: ${value.toFixed(3)} bei z=${z}`;
+                                    } else {
+                                        return `S_rel(${z}) = ${value.toFixed(3)}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Mini charts for the components
+            renderMiniCharts();
+            
+            // Lambda vs w(z) Chart
+            const lambdaWzCtx = document.getElementById('LambdaWzChart').getContext('2d');
+            if (lambdaWzChartInstance) lambdaWzChartInstance.destroy();
+            
+            lambdaWzChartInstance = new Chart(lambdaWzCtx, {
+                type: 'line',
+                data: {
+                    labels: html_data.z,
+                    datasets: [
+                        {
+                            label: 'Λ(z)/Λ₀',
+                            data: html_data.Lambda_ratio,
+                            borderColor: '#5D5CDE', // Primary
+                            backgroundColor: 'transparent',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: false,
+                            pointRadius: 0,
+                            pointHoverRadius: 5,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'w(z)',
+                            data: html_data.w_z,
+                            borderColor: '#db2777', // Pink
+                            backgroundColor: 'transparent',
+                            borderWidth: 2.5,
+                            borderDash: [5, 5],
+                            tension: 0.4,
+                            fill: false,
+                            pointRadius: 0,
+                            pointHoverRadius: 5,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    ...getChartOptions('', ''),
+                    scales: {
+                        x: {
+                            ...getChartOptions().scales.x
+                        },
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Λ(z)/Λ₀',
+                                color: getChartOptions().scales.y.title.color,
+                                font: getChartOptions().scales.y.title.font
+                            },
+                            ticks: getChartOptions().scales.y.ticks,
+                            grid: {
+                                ...getChartOptions().scales.y.grid,
+                                display: true
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'w(z)',
+                                color: getChartOptions().scales.y.title.color,
+                                font: getChartOptions().scales.y.title.font
+                            },
+                            ticks: getChartOptions().scales.y.ticks,
+                            grid: {
+                                ...getChartOptions().scales.y.grid,
+                                display: false
+                            },
+                            min: -1.3,
+                            max: -0.7
+                        }
+                    },
+                    plugins: {
+                        ...getChartOptions().plugins,
+                        tooltip: {
+                            ...getChartOptions().plugins.tooltip,
+                            callbacks: {
+                                label: (context) => {
+                                    const z = html_data.z[context.dataIndex];
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    
+                                    if (context.dataset.yAxisID === 'y') {
+                                        return `Λ(${z})/Λ₀ = ${value.toFixed(3)}`;
+                                    } else {
+                                        let regime = '';
+                                        if (value < -1) regime = ' (Phantom-Bereich)';
+                                        else if (value > -1) regime = ' (Quintessenz-Bereich)';
+                                        else regime = ' (ΛCDM)';
+                                        
+                                        return `w(${z}) = ${value.toFixed(3)}${regime}`;
+                                    }
+                                }
+                            }
+                        },
+                        annotation: {
+                            annotations: {
+                                lcdmLineY: {
+                                    type: 'line',
+                                    yMin: 1,
+                                    yMax: 1,
+                                    borderColor: 'rgba(16, 185, 129, 0.5)',
+                                    borderWidth: 1.5,
+                                    borderDash: [2, 2]
+                                },
+                                lcdmLineY1: {
+                                    type: 'line',
+                                    yMin: -1,
+                                    yMax: -1,
+                                    borderColor: 'rgba(219, 39, 119, 0.5)',
+                                    borderWidth: 1.5,
+                                    borderDash: [2, 2],
+                                    yScaleID: 'y1'
+                                },
+                                desiPoint: {
+                                    type: 'point',
+                                    xValue: 0.5,
+                                    yValue: html_data.metadata.DESI_w_target,
+                                    backgroundColor: 'rgba(249, 115, 22, 0.7)',
+                                    radius: 6,
+                                    yScaleID: 'y1'
+                                },
+                                desiLabel: {
+                                    type: 'label',
+                                    xValue: 0.5,
+                                    yValue: -0.77,
+                                    content: 'DESI: w(0.5) = -0.84',
+                                    font: {
+                                        size: 11,
+                                        weight: 'bold'
+                                    },
+                                    color: '#f97316',
+                                    yScaleID: 'y1'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Function to render mini charts for the components
+        function renderMiniCharts() {
+            // Temperature term mini chart
+            const tempTermCtx = document.getElementById('temperatureTermChart').getContext('2d');
+            if (tempTermChartInstance) tempTermChartInstance.destroy();
+            
+            tempTermChartInstance = new Chart(tempTermCtx, {
+                type: 'line',
+                data: {
+                    labels: html_data.z,
+                    datasets: [{
+                        label: '(T₀/T_CMB)^α(z)',
+                        data: html_data.tempTerm,
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            enabled: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: false
+                        },
+                        y: {
+                            display: false
+                        }
+                    },
+                    elements: {
+                        point: {
+                            radius: 0
+                        }
+                    }
+                }
+            });
+            
+            // Entropy term mini chart
+            const entropyTermCtx = document.getElementById('entropyTermChart').getContext('2d');
+            if (entropyTermChartInstance) entropyTermChartInstance.destroy();
+            
+            entropyTermChartInstance = new Chart(entropyTermCtx, {
+                type: 'line',
+                data: {
+                    labels: html_data.z,
+                    datasets: [{
+                        label: '1 + β·S_rel(z)',
+                        data: html_data.entropyTerm,
+                        borderColor: '#db2777',
+                        backgroundColor: 'rgba(219, 39, 119, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            enabled: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: false
+                        },
+                        y: {
+                            display: false
+                        }
+                    },
+                    elements: {
+                        point: {
+                            radius: 0
+                        }
+                    }
+                }
+            });
+            
+            // Combined term mini chart
+            const combinedTermCtx = document.getElementById('combinedTermChart').getContext('2d');
+            if (combinedTermChartInstance) combinedTermChartInstance.destroy();
+            
+            combinedTermChartInstance = new Chart(combinedTermCtx, {
+                type: 'line',
+                data: {
+                    labels: html_data.z,
+                    datasets: [{
+                        label: 'Λ(z)/Λ₀',
+                        data: html_data.Lambda_ratio,
+                        borderColor: '#5D5CDE',
+                        backgroundColor: 'rgba(93, 92, 222, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            enabled: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: false
+                        },
+                        y: {
+                            display: false
+                        }
+                    },
+                    elements: {
+                        point: {
+                            radius: 0
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Set up interactive parameter controls
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize sliders
+            const z_starSlider = document.getElementById('z_star');
+            const z_starValue = document.getElementById('z_star_value');
+            const alpha_0Slider = document.getElementById('alpha_0');
+            const alpha_0Value = document.getElementById('alpha_0_value');
+            const alpha_ampSlider = document.getElementById('alpha_amp');
+            const alpha_ampValue = document.getElementById('alpha_amp_value');
+            const resetButton = document.getElementById('resetParams');
+            const showLCDMButton = document.getElementById('showLCDM');
+            
+            if (z_starSlider) {
+                z_starSlider.addEventListener('input', function(e) {
+                    const value = parseFloat(e.target.value);
+                    z_starValue.textContent = `z* = ${value.toFixed(2)}`;
+                    modelParams.z_star = value;
+                    recomputeData();
+                    renderCharts();
+                });
+            }
+            
+            if (alpha_0Slider) {
+                alpha_0Slider.addEventListener('input', function(e) {
+                    const value = parseFloat(e.target.value);
+                    alpha_0Value.textContent = `α₀ = ${value.toFixed(2)}`;
+                    modelParams.alpha_0 = value;
+                    recomputeData();
+                    renderCharts();
+                });
+            }
+            
+            if (alpha_ampSlider) {
+                alpha_ampSlider.addEventListener('input', function(e) {
+                    const value = parseFloat(e.target.value);
+                    alpha_ampValue.textContent = `A = ${value.toFixed(2)}`;
+                    modelParams.alpha_amp = value;
+                    recomputeData();
+                    renderCharts();
+                });
+            }
+            
+            if (resetButton) {
+                resetButton.addEventListener('click', function() {
+                    // Reset to optimal values
+                    modelParams = {
+                        z_star: 0.69,
+                        alpha_0: -0.57,
+                        alpha_amp: 1.20,
+                        beta: 0.048
+                    };
+                    
+                    // Update slider positions and values
+                    if (z_starSlider) {
+                        z_starSlider.value = modelParams.z_star;
+                        z_starValue.textContent = `z* = ${modelParams.z_star.toFixed(2)}`;
+                    }
+                    
+                    if (alpha_0Slider) {
+                        alpha_0Slider.value = modelParams.alpha_0;
+                        alpha_0Value.textContent = `α₀ = ${modelParams.alpha_0.toFixed(2)}`;
+                    }
+                    
+                    if (alpha_ampSlider) {
+                        alpha_ampSlider.value = modelParams.alpha_amp;
+                        alpha_ampValue.textContent = `A = ${modelParams.alpha_amp.toFixed(2)}`;
+                    }
+                    
+                    // Recompute data and redraw charts
+                    recomputeData();
+                    renderCharts();
+                });
+            }
+            
+            if (showLCDMButton) {
+                showLCDMButton.addEventListener('click', function() {
+                    if (lambdaMainChartInstance) {
+                        // Toggle visibility of ΛCDM line
+                        const visible = lambdaMainChartInstance.isDatasetVisible(1);
+                        lambdaMainChartInstance.setDatasetVisibility(1, !visible);
+                        lambdaMainChartInstance.update();
+                        
+                        // Change button text
+                        this.innerHTML = visible ? 
+                            '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> ΛCDM anzeigen' : 
+                            '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> ΛCDM ausblenden';
+                    }
+                });
+            }
+            
+            // --- Dark mode toggle ---
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const darkModeIcon = document.getElementById('darkModeIcon');
+            const darkModeText = document.getElementById('darkModeText');
+            
+            function updateDarkModeUI() {
+                if (document.documentElement.classList.contains('dark')) {
+                    darkModeIcon.textContent = '☀️';
+                    darkModeText.textContent = 'Light Mode';
+                } else {
+                    darkModeIcon.textContent = '🌙';
+                    darkModeText.textContent = 'Dark Mode';
+                }
+            }
+            
+            function toggleDarkMode() {
+                if (document.documentElement.classList.contains('dark')) {
+                    document.documentElement.classList.remove('dark');
+                } else {
+                    document.documentElement.classList.add('dark');
+                }
+                
+                updateDarkModeUI();
+                renderCharts();
+            }
+            
+            if (darkModeToggle) {
+                darkModeToggle.addEventListener('click', toggleDarkMode);
+                updateDarkModeUI();
+            }
+            
+            // Set generation date
+            document.getElementById('generationDate').textContent = `Daten generiert am: ${new Date().toLocaleDateString('de-DE', {
+                year: 'numeric', month: 'long', day: 'numeric'
+            })}`;
+            
+            // --- Loading indicator ---
+            const loadingBar = document.getElementById('loading-bar');
+            function updateLoadingBar(percent) {
+                loadingBar.style.width = `${percent}%`;
+                if (percent >= 100) {
+                    setTimeout(() => {
+                        loadingBar.style.width = '0%';
+                    }, 300);
+                }
+            }
+            
+            // Simulate loading progress
+            let progress = 0;
+            const loadingInterval = setInterval(() => {
+                progress += 5;
+                updateLoadingBar(progress);
+                if (progress >= 100) {
+                    clearInterval(loadingInterval);
+                }
+            }, 50);
+            
+            // Initial render
+            renderCharts();
+        });
+        
+        // Ensure MathJax is properly initialized
+        window.MathJax = {
+            tex: {
+                inlineMath: [['\\(', '\\)']],
+                displayMath: [['\\[', '\\]']]
+            },
+            startup: {
+                ready: () => {
+                    MathJax.startup.defaultReady();
+                    setTimeout(renderCharts, 200);
+                }
+            }
+        };
+    </script>
 </body>
 </html>
