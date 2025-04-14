@@ -65,7 +65,7 @@
         }
         .chart-container {
             position: relative;
-            height: 40vh;
+            height: 60vh;
             width: 100%;
             margin-bottom: 1rem;
         }
@@ -142,7 +142,7 @@
 <body class="bg-gradient-to-br from-white to-lightAccent dark:from-gray-900 dark:to-darkAccent text-gray-800 dark:text-gray-100 transition-colors duration-200">
     <div id="loading-bar"></div>
     
-    <div class="container mx-auto px-4 py-8 max-w-5xl shadow-lg rounded-lg bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+    <div class="container mx-auto px-4 py-8 max-w-7xl shadow-lg rounded-lg bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
         <header class="flex flex-col md:flex-row justify-between items-center mb-8 relative">
             <div class="absolute -top-8 left-0 right-0 h-2 bg-gradient-to-r from-accent1 via-accent2 to-accent3 rounded-full"></div>
             <div class="text-center md:text-left">
@@ -222,7 +222,7 @@
                     <div class="flex justify-between mb-1">
                         <h4 class="font-semibold text-indigo-700 dark:text-indigo-300">z*</h4>
                         <div class="text-sm text-indigo-600 dark:text-indigo-200">
-                            <span class="line-through">0.69</span> → <span class="font-bold">0.60</span>
+                            <span class="line-through">0.69</span> → <span class="font-bold">0.70</span>
                         </div>
                     </div>
                     <p class="text-sm">
@@ -259,10 +259,10 @@
                     <p class="text-sm mb-2">
                         Legt fest, wann sich α(z) ändert:
                     </p>
-                    <input type="range" id="z_star" min="0.5" max="0.8" step="0.01" value="0.60" class="w-full">
+                    <input type="range" id="z_star" min="0.4" max="0.8" step="0.01" value="0.70" class="w-full">
                     <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                        <span>Früher (0.5)</span>
-                        <span id="z_star_value" class="font-semibold text-black dark:text-white">z* = 0.60</span>
+                        <span>Früher (0.4)</span>
+                        <span id="z_star_value" class="font-semibold text-black dark:text-white">z* = 0.70</span>
                         <span>Später (0.8)</span>
                     </div>
                 </div>
@@ -348,7 +348,7 @@
                     <ul class="space-y-2 list-disc pl-5">
                         <li><strong>Negativerer α₀:</strong> Verstärkt den Einfluss der Temperatur, macht Λ(z) steiler in der späten Epoche</li>
                         <li><strong>Kleineres A:</strong> Etwas sanfterer Übergang bei z*</li>
-                        <li><strong>Früheres z*:</strong> Übergang erfolgt bereits bei z=0.60 statt 0.69</li>
+                        <li><strong>Früheres z*:</strong> Übergang erfolgt bereits bei z=0.70 statt 0.69</li>
                         <li><strong>Reduziertes β:</strong> Geringerer Einfluss der Strukturentropie, was die Temperatur-Dynamik in den Vordergrund stellt</li>
                     </ul>
                 </div>
@@ -370,7 +370,7 @@
             <div class="p-4 bg-gradient-to-r from-white to-lightAccent dark:from-gray-900 dark:to-darkAccent rounded-lg">
                 <h4 class="text-lg font-semibold mb-3 text-primary dark:text-blue-300">Physikalische Auswirkungen auf den Lambda-Term</h4>
                 <p class="mb-3">
-                    Mit den angepassten Parametern (α₀ = -0.65, A = 1.10, z* = 0.60, β = 0.040) zeigt der Lambda-Term folgende Eigenschaften:
+                    Mit den angepassten Parametern (α₀ = -0.65, A = 1.10, z* = 0.70, β = 0.040) zeigt der Lambda-Term folgende Eigenschaften:
                 </p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <ul class="space-y-2 list-disc pl-5">
@@ -429,7 +429,7 @@
         <div class="text-center mt-8 p-4 bg-gradient-to-r from-white to-lightAccent dark:from-gray-900 dark:to-darkAccent rounded-lg shadow">
             <h3 class="text-xl font-semibold mb-3 text-primary">Zusammenfassung</h3>
             <p class="text-gray-700 dark:text-gray-300">
-                Das GDE-Modell kann mit angepassten Parametern (α₀ = -0.65, A = 1.10, z* = 0.60, β = 0.040) die neuesten DESI-Fits 
+                Das GDE-Modell kann mit angepassten Parametern (α₀ = -0.65, A = 1.10, z* = 0.70, β = 0.040) die neuesten DESI-Fits 
                 reproduzieren, die eine phantom-artige Dunkle Energie (w < -1) bei z=0.5 nahelegen. Diese Anpassung betont die 
                 Flexibilität des thermodynamischen Ansatzes und verleiht der beobachteten Dynamik eine physikalische Grundlage.
             </p>
@@ -446,16 +446,16 @@
     <script>
         // --- Data Generation based on GDE Model ---
         function generateData() {
-            // Generate a detailed redshift range
+            // Generate a detailed redshift range with higher resolution
             const zRange = [];
-            const zStep = 0.05;
+            const zStep = 0.02; // Higher resolution (was 0.05)
             for (let z = -0.5; z <= 3; z += zStep) {
                 zRange.push(parseFloat(z.toFixed(2)));
             }
 
             // Model parameters (updated version for phantom dynamics)
             const modelParams = {
-                z_star: 0.60,  // Down from 0.69
+                z_star: 0.70,  // Updated from 0.60
                 alpha_0: -0.65, // Down from -0.57
                 alpha_amp: 1.10, // Down from 1.20
                 beta: 0.040  // Down from 0.048
@@ -568,7 +568,7 @@
         
         // Model parameters that can be adjusted by the user
         let modelParams = {
-            z_star: 0.60,
+            z_star: 0.70,
             alpha_0: -0.65,
             alpha_amp: 1.10,
             beta: 0.040
@@ -1098,7 +1098,7 @@
                 resetButton.addEventListener('click', function() {
                     // Reset to optimal values for DESI fits
                     modelParams = {
-                        z_star: 0.60,
+                        z_star: 0.70,
                         alpha_0: -0.65,
                         alpha_amp: 1.10,
                         beta: 0.040
